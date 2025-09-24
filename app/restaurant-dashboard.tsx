@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
   Alert,
   RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import {
-  restaurantManagementService,
   authService,
-  RestaurantProfile,
+  restaurantManagementService,
   RestaurantOrder,
+  RestaurantProfile,
 } from '../services';
 
 export default function RestaurantDashboardScreen() {
@@ -180,7 +180,7 @@ export default function RestaurantDashboardScreen() {
             
             <View style={styles.statCard}>
               <Ionicons name="star" size={24} color="#FFD700" />
-              <Text style={styles.statNumber}>{profile?.rating?.toFixed(1) || '0.0'}</Text>
+              <Text style={styles.statNumber}>{profile?.rating?.average?.toFixed(1) || '0.0'}</Text>
               <Text style={styles.statLabel}>Rating</Text>
             </View>
           </View>
@@ -219,13 +219,13 @@ export default function RestaurantDashboardScreen() {
               orders.map((order) => (
                 <View key={order.id} style={styles.orderCard}>
                   <View style={styles.orderHeader}>
-                    <Text style={styles.orderNumber}>Order #{order.orderNumber}</Text>
+                    <Text style={styles.orderNumber}>Order #{order.id.slice(-6)}</Text>
                     <Text style={styles.orderTime}>
-                      {new Date(order.createdAt).toLocaleTimeString()}
+                      {new Date(order.timestamps.ordered).toLocaleTimeString()}
                     </Text>
                   </View>
                   
-                  <Text style={styles.customerName}>{order.customerName}</Text>
+                  <Text style={styles.customerName}>{order.customerInfo.name}</Text>
                   
                   <View style={styles.orderItems}>
                     {order.items.slice(0, 2).map((item, index) => (
@@ -241,7 +241,7 @@ export default function RestaurantDashboardScreen() {
                   </View>
                   
                   <View style={styles.orderFooter}>
-                    <Text style={styles.orderTotal}>${order.totalAmount.toFixed(2)}</Text>
+                    <Text style={styles.orderTotal}>${order.pricing.total.toFixed(2)}</Text>
                     <View style={styles.orderActions}>
                       <TouchableOpacity
                         style={[styles.orderActionButton, styles.rejectButton]}

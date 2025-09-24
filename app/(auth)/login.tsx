@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { authService, UserRole } from '../../services';
 
 export default function LoginScreen() {
@@ -34,13 +34,13 @@ export default function LoginScreen() {
             router.replace('/');
             break;
           case 'restaurant':
-            router.replace('/restaurant');
+            router.replace('/restaurant-dashboard');
             break;
           case 'delivery':
-            router.replace('/delivery');
+            router.replace('/delivery-dashboard');
             break;
           case 'admin':
-            router.replace('/admin');
+            router.replace('/admin-dashboard' as any);
             break;
         }
       }
@@ -193,7 +193,7 @@ export default function LoginScreen() {
               {/* Forgot Password */}
               <TouchableOpacity
                 style={styles.forgotPassword}
-                onPress={() => router.push('/(auth)/forgot-password')}
+                onPress={() => router.push('/(auth)/forgot-password' as any)}
               >
                 <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
               </TouchableOpacity>
@@ -223,7 +223,7 @@ export default function LoginScreen() {
             {/* Sign Up Link */}
             <View style={styles.signupContainer}>
               <Text style={styles.signupText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
+              <TouchableOpacity onPress={() => router.push('/(auth)/signup' as any)}>
                 <Text style={styles.signupLink}>Sign Up</Text>
               </TouchableOpacity>
             </View>
