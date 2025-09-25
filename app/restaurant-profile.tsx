@@ -3,18 +3,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-    authService,
-    restaurantManagementService,
-    RestaurantProfile,
+  authService,
+  restaurantManagementService,
+  RestaurantProfile,
 } from '../services';
 
 export default function RestaurantProfileScreen() {

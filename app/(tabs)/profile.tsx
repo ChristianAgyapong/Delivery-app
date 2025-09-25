@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Image,
     ScrollView,
@@ -8,16 +8,55 @@ import {
     Switch,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { authService } from '../../services';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get current user role to determine which profile to show
+    const currentUser = authService.getCurrentUser();
+    if (currentUser) {
+      setUserRole(currentUser.role);
+    }
+  }, []);
+
+  const navigateToProfile = () => {
+    // Navigate to appropriate profile based on user role
+    switch (userRole) {
+      case 'customer':
+        router.push('/customer-profile' as any);
+        break;
+      case 'restaurant':
+        router.push('/restaurant-profile' as any);
+        break;
+      case 'delivery':
+        router.push('/delivery-profile' as any);
+        break;
+      case 'admin':
+      case 'super_admin':
+        router.push('/admin-profile' as any);
+        break;
+      default:
+        router.push('/customer-profile' as any); // Default to customer profile
+    }
+  };
 
   const menuItems = [
+    {
+      id: '0',
+      title: 'View Full Profile',
+      icon: 'person-circle',
+      subtitle: 'Edit your complete profile',
+      hasArrow: true,
+      onPress: navigateToProfile,
+    },
     {
       id: '1',
       title: 'Payment Methods',
@@ -84,7 +123,7 @@ export default function ProfileScreen() {
   ];
 
   const renderMenuItem = (item: any) => (
-    <TouchableOpacity key={item.id} style={styles.menuItem}>
+    <TouchableOpacity key={item.id} style={styles.menuItem} onPress={item.onPress}>
       <View style={styles.menuItemLeft}>
         <View style={styles.iconContainer}>
           <Ionicons name={item.icon} size={20} color="#FF6B35" />
@@ -127,7 +166,7 @@ export default function ProfileScreen() {
               <Text style={styles.profileEmail}>john.doe@example.com</Text>
               <Text style={styles.profilePhone}>+1 (555) 123-4567</Text>
             </View>
-            <TouchableOpacity style={styles.editButton}>
+            <TouchableOpacity style={styles.editButton} onPress={navigateToProfile}>
               <Ionicons name="pencil" size={16} color="#FF6B35" />
             </TouchableOpacity>
           </View>

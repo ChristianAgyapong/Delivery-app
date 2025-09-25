@@ -151,9 +151,17 @@ export default function RestaurantDashboardScreen() {
             <Text style={styles.welcomeText}>Welcome back!</Text>
             <Text style={styles.restaurantName}>{profile?.businessName || 'Restaurant'}</Text>
           </View>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={24} color="#FFF" />
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity 
+              style={styles.profileButton} 
+              onPress={() => router.push('/restaurant-profile' as any)}
+            >
+              <Ionicons name="person-outline" size={20} color="#FFF" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={24} color="#FFF" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView
@@ -300,6 +308,16 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  profileButton: {
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
   },
   logoutButton: {
     padding: 8,

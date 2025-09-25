@@ -3,12 +3,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
+  Animated,
+  Dimensions,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authService } from '../services/authService';
@@ -17,46 +20,99 @@ import {
   deliveryManagementService
 } from '../services/deliveryManagementService';
 
+const { width } = Dimensions.get('window');
+
 export default function DeliveryProfileScreen() {
   const [profile, setProfile] = useState<DeliveryRider | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(100))[0];
 
   useEffect(() => {
     loadProfile();
+    // Animate in on mount
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   const loadProfile = async () => {
     try {
       setLoading(true);
+      // Simulate network delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const profileData = deliveryManagementService.getRiderProfile();
       setProfile(profileData);
     } catch (error) {
       console.error('Failed to load profile:', error);
-      Alert.alert('Error', 'Failed to load profile. Please try again.');
+      Alert.alert('❌ Error', 'Failed to load profile. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-      router.replace('/');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      Alert.alert('Error', 'Failed to logout. Please try again.');
-    }
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadProfile();
+    setRefreshing(false);
   };
 
-  if (loading || !profile) {
+  const handleLogout = async () => {
+    Alert.alert(
+      'Confirm Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await authService.logout();
+              router.replace('/');
+            } catch (error) {
+              console.error('Logout failed:', error);
+              Alert.alert('❌ Error', 'Failed to logout. Please try again.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  if (loading) {
     return (
-      <LinearGradient colors={['#2196F3', '#64B5F6']} style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading Profile...</Text>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+      <SafeAreaView style={styles.container}>
+        <LinearGradient colors={['#FF6B6B', '#FF8E53']} style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={styles.loadingText}>Loading your profile...</Text>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient colors={['#FF6B6B', '#FF8E53']} style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color="#FFFFFF" />
+          <Text style={styles.errorText}>Failed to load profile</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadProfile}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </SafeAreaView>
     );
   }
 
@@ -503,5 +559,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  errorText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginTop: 24,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

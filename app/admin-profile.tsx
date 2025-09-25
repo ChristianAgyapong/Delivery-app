@@ -4,12 +4,14 @@ import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     Alert,
+    Animated,
+    Dimensions,
     ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -17,19 +19,41 @@ import {
     authService
 } from '../services';
 
+const { width } = Dimensions.get('window');
+
 export default function AdminProfileScreen() {
   const [profile, setProfile] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<AdminUser | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(100))[0];
 
   useEffect(() => {
     loadProfile();
+    // Animate in on mount
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   const loadProfile = async () => {
     try {
       setLoading(true);
+      // Simulate network delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Create a mock admin profile since the service doesn't have a specific method
       const adminProfile: AdminUser = {
         id: 'admin_001',

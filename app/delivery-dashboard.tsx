@@ -179,6 +179,12 @@ export default function DeliveryDashboardScreen() {
               />
               <Text style={styles.statusText}>{isOnline ? 'Online' : 'Offline'}</Text>
             </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.profileButton} 
+              onPress={() => router.push('/delivery-profile' as any)}
+            >
+              <Ionicons name="person-outline" size={20} color="#FFF" />
+            </TouchableOpacity>
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={24} color="#FFF" />
             </TouchableOpacity>
@@ -396,6 +402,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginLeft: 4,
+  },
+  profileButton: {
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    marginRight: 10,
   },
   logoutButton: {
     padding: 8,

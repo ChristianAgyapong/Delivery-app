@@ -50,10 +50,14 @@ export default function WelcomeScreen() {
               <Ionicons name="arrow-forward" size={20} color="#fff" style={styles.buttonIcon} />
             </TouchableOpacity>
             
-            <Text style={styles.signInText}>
-              Already have an account? 
-              <Text style={styles.signInLink}> Sign In</Text>
-            </Text>
+            <TouchableOpacity 
+              onPress={() => router.push('/(auth)/login' as any)}
+            >
+              <Text style={styles.signInText}>
+                Already have an account? 
+                <Text style={styles.signInLink}> Sign In</Text>
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </LinearGradient>

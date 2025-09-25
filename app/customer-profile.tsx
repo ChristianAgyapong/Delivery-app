@@ -3,13 +3,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
+    Animated,
+    Dimensions,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -19,6 +23,8 @@ import {
     ordersService,
     userService,
 } from '../services';
+
+const { width } = Dimensions.get('window');
 
 interface CustomerProfile extends User {
   addresses: Array<{
@@ -47,14 +53,34 @@ export default function CustomerProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<CustomerProfile | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(100))[0];
 
   useEffect(() => {
     loadProfile();
+    // Animate in on mount
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   const loadProfile = async () => {
     try {
       setLoading(true);
+      // Simulate network delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const user = userService.getCurrentUser();
       // Create extended profile with additional customer data
       const customerProfile: CustomerProfile = {
@@ -68,6 +94,7 @@ export default function CustomerProfileScreen() {
             state: 'NY',
             zipCode: '10001',
             isDefault: true,
+            instructions: 'Ring doorbell twice'
           },
           {
             id: '2',
@@ -93,7 +120,7 @@ export default function CustomerProfileScreen() {
       setEditedProfile(customerProfile);
     } catch (error) {
       console.error('Error loading profile:', error);
-      Alert.alert('Error', 'Failed to load profile data');
+      Alert.alert('❌ Error', 'Failed to load profile data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -102,136 +129,206 @@ export default function CustomerProfileScreen() {
   const handleSaveProfile = async () => {
     if (!editedProfile) return;
 
+    // Validate required fields
+    if (!editedProfile.firstName?.trim() || !editedProfile.lastName?.trim()) {
+      Alert.alert('⚠️ Validation Error', 'First name and last name are required');
+      return;
+    }
+
+    if (editedProfile.email && !isValidEmail(editedProfile.email)) {
+      Alert.alert('⚠️ Validation Error', 'Please enter a valid email address');
+      return;
+    }
+
     try {
+      setSaving(true);
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const result = await userService.updateProfile(editedProfile);
       if (result.success) {
         setProfile(editedProfile);
         setIsEditing(false);
-        Alert.alert('Success', 'Profile updated successfully');
+        
+        Alert.alert('✅ Success', 'Your profile has been updated successfully!');
       } else {
-        Alert.alert('Error', result.message);
+        Alert.alert('❌ Error', result.message || 'Failed to update profile');
       }
     } catch (error) {
       console.error('Error saving profile:', error);
-      Alert.alert('Error', 'Failed to save profile');
+      Alert.alert('❌ Error', 'Failed to save profile changes. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleCancelEdit = () => {
-    setEditedProfile(profile);
-    setIsEditing(false);
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
-  const handleLogout = () => {
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadProfile();
+    setRefreshing(false);
+  };
+
+  const handleLogout = async () => {
     Alert.alert(
-      'Logout',
+      'Confirm Logout',
       'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: () => {
-            authService.logout();
-            router.replace('/(auth)/login');
-          },
-        },
+          onPress: async () => {
+            try {
+              await authService.logout();
+              router.replace('/');
+            } catch (error) {
+              Alert.alert('❌ Error', 'Failed to logout. Please try again.');
+            }
+          }
+        }
       ]
     );
   };
 
-  const getOrderStats = () => {
+  // Get customer statistics
+  const getCustomerStats = () => {
     const orders = ordersService.getAllOrders();
-    const totalOrders = orders.length;
     const totalSpent = orders.reduce((sum: number, order: any) => sum + order.total, 0);
-    return { totalOrders, totalSpent };
+    const favoriteCount = favoritesService.getCount();
+    
+    return {
+      totalOrders: orders.length,
+      totalSpent,
+      favoriteRestaurants: typeof favoriteCount === 'object' ? favoriteCount.restaurants || 0 : favoriteCount,
+      memberSince: profile?.createdAt ? new Date(profile.createdAt).getFullYear() : 2024
+    };
   };
 
-  const getFavoriteStats = () => {
-    const favorites = favoritesService.getFavoriteRestaurants();
-    return favorites.length;
-  };
+  const stats = profile ? getCustomerStats() : null;
 
-  if (loading || !profile) {
+  if (loading) {
     return (
-      <LinearGradient colors={['#4CAF50', '#66BB6A']} style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading Profile...</Text>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+      <SafeAreaView style={styles.container}>
+        <LinearGradient colors={['#667eea', '#764ba2']} style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={styles.loadingText}>Loading your profile...</Text>
+        </LinearGradient>
+      </SafeAreaView>
     );
   }
 
-  const { totalOrders, totalSpent } = getOrderStats();
-  const favoriteCount = getFavoriteStats();
+  if (!profile) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient colors={['#667eea', '#764ba2']} style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color="#FFFFFF" />
+          <Text style={styles.errorText}>Failed to load profile</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadProfile}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <LinearGradient colors={['#4CAF50', '#66BB6A']} style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.container}>
+      <Animated.View style={[styles.animatedContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#FFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Customer Profile</Text>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => setIsEditing(!isEditing)}
-          >
-            <Ionicons 
-              name={isEditing ? 'close' : 'create'} 
-              size={24} 
-              color="#FFF" 
-            />
-          </TouchableOpacity>
-        </View>
+        <LinearGradient colors={['#667eea', '#764ba2']} style={styles.header}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>My Profile</Text>
+            <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+              <Ionicons name="log-out-outline" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
 
-        <ScrollView style={styles.content}>
-          {/* Profile Image */}
-          <View style={styles.profileImageContainer}>
-            <View style={styles.profileImagePlaceholder}>
-              <Ionicons name="person" size={48} color="#4CAF50" />
+          {/* Profile Picture Section */}
+          <View style={styles.profileImageSection}>
+            <View style={styles.profileImageContainer}>
+              <View style={styles.profileImagePlaceholder}>
+                <Text style={styles.profileImageText}>
+                  {profile.firstName?.[0]?.toUpperCase()}{profile.lastName?.[0]?.toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.editImageBadge}>
+                <Ionicons name="camera" size={16} color="#FFFFFF" />
+              </View>
             </View>
-            <Text style={styles.customerName}>
+            <Text style={styles.profileName}>
               {profile.firstName} {profile.lastName}
             </Text>
-            <Text style={styles.customerStatus}>
-              Member since {new Date(profile.createdAt).getFullYear()}
-            </Text>
+            <Text style={styles.profileEmail}>{profile.email}</Text>
           </View>
+        </LinearGradient>
 
-          {/* Stats Cards */}
-          <View style={styles.statsContainer}>
-            <View style={styles.statCard}>
-              <Ionicons name="receipt" size={24} color="#4CAF50" />
-              <Text style={styles.statNumber}>{totalOrders}</Text>
-              <Text style={styles.statLabel}>Total Orders</Text>
+        <ScrollView 
+          style={styles.content}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Quick Stats */}
+          {stats && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>📊 Quick Stats</Text>
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{stats.totalOrders}</Text>
+                  <Text style={styles.statLabel}>Orders</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>${stats.totalSpent.toFixed(2)}</Text>
+                  <Text style={styles.statLabel}>Spent</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{stats.favoriteRestaurants}</Text>
+                  <Text style={styles.statLabel}>Favorites</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{stats.memberSince}</Text>
+                  <Text style={styles.statLabel}>Member Since</Text>
+                </View>
+              </View>
             </View>
-            
-            <View style={styles.statCard}>
-              <Ionicons name="cash" size={24} color="#2196F3" />
-              <Text style={styles.statNumber}>${totalSpent.toFixed(0)}</Text>
-              <Text style={styles.statLabel}>Total Spent</Text>
-            </View>
-            
-            <View style={styles.statCard}>
-              <Ionicons name="heart" size={24} color="#F44336" />
-              <Text style={styles.statNumber}>{favoriteCount}</Text>
-              <Text style={styles.statLabel}>Favorites</Text>
-            </View>
-          </View>
+          )}
 
-          {/* Personal Information */}
+          {/* Personal Information Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Personal Information</Text>
-            
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>👤 Personal Information</Text>
+              <TouchableOpacity
+                onPress={() => isEditing ? handleSaveProfile() : setIsEditing(true)}
+                style={[styles.editButton, isEditing && styles.saveButton]}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Ionicons 
+                    name={isEditing ? "checkmark" : "pencil"} 
+                    size={20} 
+                    color="#FFFFFF" 
+                  />
+                )}
+                <Text style={styles.editButtonText}>
+                  {saving ? 'Saving...' : isEditing ? 'Save' : 'Edit'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>First Name</Text>
+              <Text style={styles.inputLabel}>First Name *</Text>
               {isEditing ? (
                 <TextInput
                   style={styles.input}
@@ -250,7 +347,7 @@ export default function CustomerProfileScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Last Name</Text>
+              <Text style={styles.inputLabel}>Last Name *</Text>
               {isEditing ? (
                 <TextInput
                   style={styles.input}
@@ -284,7 +381,7 @@ export default function CustomerProfileScreen() {
                   keyboardType="phone-pad"
                 />
               ) : (
-                <Text style={styles.inputValue}>{profile.phone}</Text>
+                <Text style={styles.inputValue}>{profile.phone || 'Not provided'}</Text>
               )}
             </View>
 
@@ -307,18 +404,34 @@ export default function CustomerProfileScreen() {
                 <Text style={styles.inputValue}>{profile.email}</Text>
               )}
             </View>
+
+            {isEditing && (
+              <TouchableOpacity
+                onPress={() => setIsEditing(false)}
+                style={styles.cancelButton}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          {/* Delivery Addresses */}
+          {/* Delivery Addresses Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Delivery Addresses</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>📍 Delivery Addresses</Text>
+              <TouchableOpacity style={styles.addButton}>
+                <Ionicons name="add" size={20} color="#667eea" />
+                <Text style={styles.addButtonText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+            
             {profile.addresses.map((address, index) => (
-              <View key={index} style={styles.addressCard}>
+              <View key={address.id} style={styles.addressCard}>
                 <View style={styles.addressHeader}>
                   <Text style={styles.addressType}>{address.type}</Text>
                   {address.isDefault && (
                     <View style={styles.defaultBadge}>
-                      <Text style={styles.defaultText}>Default</Text>
+                      <Text style={styles.defaultBadgeText}>Default</Text>
                     </View>
                   )}
                 </View>
@@ -327,117 +440,77 @@ export default function CustomerProfileScreen() {
                 </Text>
                 {address.instructions && (
                   <Text style={styles.addressInstructions}>
-                    Instructions: {address.instructions}
+                    📝 Instructions: {address.instructions}
                   </Text>
                 )}
               </View>
             ))}
+          </View>
+
+          {/* Preferences Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>⚙️ Preferences</Text>
+
+            <View style={styles.preferenceItem}>
+              <Text style={styles.preferenceLabel}>🥗 Dietary Restrictions</Text>
+              <Text style={styles.preferenceValue}>
+                {profile.preferences.dietaryRestrictions.length > 0
+                  ? profile.preferences.dietaryRestrictions.join(', ')
+                  : 'None specified'}
+              </Text>
+            </View>
+
+            <View style={styles.preferenceItem}>
+              <Text style={styles.preferenceLabel}>🍽️ Favorite Cuisines</Text>
+              <Text style={styles.preferenceValue}>
+                {profile.preferences.favoriteCuisines.length > 0
+                  ? profile.preferences.favoriteCuisines.join(', ')
+                  : 'No preferences set'}
+              </Text>
+            </View>
+
+            <View style={styles.preferenceItem}>
+              <Text style={styles.preferenceLabel}>🔔 Order Notifications</Text>
+              <Text style={styles.preferenceValue}>
+                {profile.preferences.notifications.orderUpdates ? '✅ Enabled' : '❌ Disabled'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Account Actions */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🔧 Account Actions</Text>
             
-            <TouchableOpacity style={styles.addAddressButton}>
-              <Ionicons name="add" size={20} color="#4CAF50" />
-              <Text style={styles.addAddressText}>Add New Address</Text>
+            <TouchableOpacity style={styles.actionButton}>
+              <Ionicons name="shield-checkmark-outline" size={24} color="#667eea" />
+              <Text style={styles.actionButtonText}>Privacy Settings</Text>
+              <Ionicons name="chevron-forward" size={20} color="#999" />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.actionButton}>
+              <Ionicons name="help-circle-outline" size={24} color="#667eea" />
+              <Text style={styles.actionButtonText}>Help & Support</Text>
+              <Ionicons name="chevron-forward" size={20} color="#999" />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.actionButton}>
+              <Ionicons name="document-text-outline" size={24} color="#667eea" />
+              <Text style={styles.actionButtonText}>Terms & Conditions</Text>
+              <Ionicons name="chevron-forward" size={20} color="#999" />
             </TouchableOpacity>
           </View>
-
-          {/* Preferences */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Preferences</Text>
-            
-            <View style={styles.preferenceRow}>
-              <Text style={styles.preferenceLabel}>Dietary Restrictions</Text>
-              <Text style={styles.preferenceValue}>
-                {profile.preferences.dietaryRestrictions.length > 0 
-                  ? profile.preferences.dietaryRestrictions.join(', ')
-                  : 'None'
-                }
-              </Text>
-            </View>
-
-            <View style={styles.preferenceRow}>
-              <Text style={styles.preferenceLabel}>Favorite Cuisines</Text>
-              <Text style={styles.preferenceValue}>
-                {profile.preferences.favoriteCuisines.length > 0 
-                  ? profile.preferences.favoriteCuisines.join(', ')
-                  : 'None'
-                }
-              </Text>
-            </View>
-
-            <View style={styles.preferenceRow}>
-              <Text style={styles.preferenceLabel}>Notifications</Text>
-              <Text style={styles.preferenceValue}>
-                {profile.preferences.notifications.orderUpdates ? 'Enabled' : 'Disabled'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.actionButtons}>
-            {isEditing ? (
-              <>
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.saveButton]}
-                  onPress={handleSaveProfile}
-                >
-                  <Ionicons name="checkmark" size={20} color="#FFF" />
-                  <Text style={styles.actionButtonText}>Save Changes</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.cancelButton]}
-                  onPress={handleCancelEdit}
-                >
-                  <Ionicons name="close" size={20} color="#FFF" />
-                  <Text style={styles.actionButtonText}>Cancel</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.ordersButton]}
-                  onPress={() => router.push('/(tabs)/orders')}
-                >
-                  <Ionicons name="receipt" size={20} color="#FFF" />
-                  <Text style={styles.actionButtonText}>My Orders</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.favoritesButton]}
-                  onPress={() => router.push('/favorites')}
-                >
-                  <Ionicons name="heart" size={20} color="#FFF" />
-                  <Text style={styles.actionButtonText}>Favorites</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.settingsButton]}
-                  onPress={() => Alert.alert('Settings', 'Settings screen coming soon!')}
-                >
-                  <Ionicons name="settings" size={20} color="#FFF" />
-                  <Text style={styles.actionButtonText}>Settings</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.logoutButton]}
-                  onPress={handleLogout}
-                >
-                  <Ionicons name="log-out" size={20} color="#FFF" />
-                  <Text style={styles.actionButtonText}>Logout</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
         </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+      </Animated.View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f8f9fa',
   },
-  safeArea: {
+  animatedContainer: {
     flex: 1,
   },
   loadingContainer: {
@@ -446,89 +519,119 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#FFF',
+    color: '#FFFFFF',
+    marginTop: 16,
+    fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  errorText: {
+    color: '#FFFFFF',
     fontSize: 18,
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginTop: 24,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '600',
   },
   header: {
+    paddingTop: 20,
+    paddingBottom: 30,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    marginBottom: 20,
   },
   backButton: {
     padding: 8,
   },
   headerTitle: {
-    color: '#FFF',
+    color: '#FFFFFF',
     fontSize: 20,
     fontWeight: 'bold',
   },
-  editButton: {
+  logoutButton: {
     padding: 8,
   },
-  content: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 20,
+  profileImageSection: {
+    alignItems: 'center',
   },
   profileImageContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
+    position: 'relative',
+    marginBottom: 12,
   },
   profileImagePlaceholder: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#FFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
-  customerName: {
+  profileImageText: {
+    color: '#FFFFFF',
+    fontSize: 36,
+    fontWeight: 'bold',
+  },
+  editImageBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#667eea',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  profileName: {
+    color: '#FFFFFF',
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFF',
-    textAlign: 'center',
-    marginTop: 12,
+    marginBottom: 4,
   },
-  customerStatus: {
-    fontSize: 16,
+  profileEmail: {
     color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'center',
-    marginTop: 4,
+    fontSize: 16,
   },
-  statsContainer: {
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    marginTop: 16,
   },
-  statCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 15,
+  statItem: {
     alignItems: 'center',
     flex: 1,
-    marginHorizontal: 5,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
-  statNumber: {
-    fontSize: 24,
+  statValue: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
-    marginVertical: 5,
+    marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
@@ -536,52 +639,98 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   section: {
-    backgroundColor: '#FFF',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 15,
     padding: 20,
+    marginBottom: 20,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 15,
+    marginBottom: 16,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#667eea',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  saveButton: {
+    backgroundColor: '#28a745',
+  },
+  editButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  addButtonText: {
+    color: '#667eea',
+    fontSize: 14,
+    fontWeight: '600',
   },
   inputGroup: {
-    marginBottom: 15,
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: '#333',
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    padding: 12,
     fontSize: 16,
-    color: '#333',
-    backgroundColor: '#FFF',
+    backgroundColor: '#f8f9fa',
   },
   inputValue: {
     fontSize: 16,
     color: '#333',
+    paddingVertical: 8,
+  },
+  cancelButton: {
+    backgroundColor: '#f8f9fa',
     paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
   },
   addressCard: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
     padding: 15,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   addressHeader: {
     flexDirection: 'row',
@@ -591,101 +740,54 @@ const styles = StyleSheet.create({
   },
   addressType: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#333',
-    textTransform: 'capitalize',
   },
   defaultBadge: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#28a745',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  defaultText: {
-    color: '#FFF',
+  defaultBadgeText: {
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
   addressText: {
     fontSize: 14,
     color: '#666',
-    lineHeight: 20,
+    marginBottom: 4,
   },
   addressInstructions: {
     fontSize: 12,
-    color: '#999',
+    color: '#888',
     fontStyle: 'italic',
-    marginTop: 5,
   },
-  addAddressButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F0F8F0',
-    borderRadius: 8,
-    paddingVertical: 15,
-    marginTop: 10,
-  },
-  addAddressText: {
-    color: '#4CAF50',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  preferenceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+  preferenceItem: {
+    marginBottom: 16,
   },
   preferenceLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: '#333',
-    flex: 1,
+    marginBottom: 4,
   },
   preferenceValue: {
     fontSize: 14,
     color: '#666',
-    flex: 1,
-    textAlign: 'right',
-  },
-  actionButtons: {
-    paddingHorizontal: 20,
-    paddingBottom: 30,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  saveButton: {
-    backgroundColor: '#4CAF50',
-  },
-  cancelButton: {
-    backgroundColor: '#666',
-  },
-  ordersButton: {
-    backgroundColor: '#2196F3',
-  },
-  favoritesButton: {
-    backgroundColor: '#F44336',
-  },
-  settingsButton: {
-    backgroundColor: '#9C27B0',
-  },
-  logoutButton: {
-    backgroundColor: '#FF5722',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   actionButtonText: {
-    color: '#FFF',
+    flex: 1,
+    marginLeft: 12,
     fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+    color: '#333',
   },
 });
