@@ -3,19 +3,21 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Animated,
-    Dimensions,
-    FlatList,
-    Image,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '../../constants/design';
+import { authService } from '../../services';
 
 const { width } = Dimensions.get('window');
 
@@ -188,12 +190,20 @@ export default function HomeScreen() {
     { id: '1', restaurantName: 'Sakura Sushi', scheduledFor: 'Tomorrow 7:00 PM', status: 'scheduled' }
   ]);
   const [showQuickActionModal, setShowQuickActionModal] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
   
   const slideAnim = new Animated.Value(0);
   const searchAnim = new Animated.Value(0);
 
   useEffect(() => {
+    // Check authentication status
+    const user = authService.getCurrentUser();
+    const authenticated = authService.isUserAuthenticated();
+    setCurrentUser(user);
+    setIsAuthenticated(authenticated);
+
     const interval = setInterval(() => {
       setCurrentDeals((prev) => (prev + 1) % featuredDeals.length);
     }, 4000);
@@ -434,8 +444,13 @@ export default function HomeScreen() {
         <View style={styles.headerTop}>
           <View style={styles.userInfo}>
             <View style={styles.greetingContainer}>
-              <Text style={styles.greeting}>Hello!</Text>
-              <Ionicons name="hand-left-outline" size={20} color="#FF6B35" style={{ marginLeft: 8 }} />
+              <Text style={styles.greeting}>
+                {isAuthenticated && currentUser ? 
+                  `Hello, ${currentUser.firstName || 'User'}!` : 
+                  'Hello!'
+                }
+              </Text>
+              <Ionicons name="hand-left-outline" size={20} color={Colors.primary} style={{ marginLeft: 8 }} />
               {!isOnline && (
                 <View style={styles.offlineIndicator}>
                   <Text style={styles.offlineText}>Offline</Text>

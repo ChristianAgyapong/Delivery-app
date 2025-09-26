@@ -67,7 +67,9 @@ class AuthService {
   private listeners: ((event: string, data: any) => void)[] = [];
 
   constructor() {
-    this.initializeMockData();
+    // Initialize without auto-login for proper authentication flow
+    this.currentUser = null;
+    this.isAuthenticated = false;
   }
 
   // Subscribe to auth events
@@ -81,25 +83,6 @@ class AuthService {
   // Notify listeners of events
   private notify(event: string, data: any = {}) {
     this.listeners.forEach(listener => listener(event, data));
-  }
-
-  // Initialize mock user data
-  private initializeMockData(): void {
-    // Auto-login as customer for development
-    this.currentUser = {
-      id: 'customer_123',
-      email: 'john.customer@example.com',
-      phone: '+1234567890',
-      role: 'customer',
-      firstName: 'John',
-      lastName: 'Doe',
-      isEmailVerified: true,
-      isPhoneVerified: true,
-      isActive: true,
-      createdAt: '2023-01-15T00:00:00.000Z',
-      lastLoginAt: new Date().toISOString(),
-    };
-    this.isAuthenticated = true;
   }
 
   // Login with email/phone and password

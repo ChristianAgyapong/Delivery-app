@@ -32,6 +32,21 @@ export default function AdminProfileScreen() {
   const slideAnim = useState(new Animated.Value(100))[0];
 
   useEffect(() => {
+    // Check authentication
+    const isAuthenticated = authService.isUserAuthenticated();
+    const user = authService.getCurrentUser();
+    
+    if (!isAuthenticated || !user) {
+      router.replace('/(auth)/login');
+      return;
+    }
+
+    if (user.role !== 'admin') {
+      Alert.alert('Access Denied', 'This profile is only accessible to administrators.');
+      router.back();
+      return;
+    }
+
     loadProfile();
     // Animate in on mount
     Animated.parallel([

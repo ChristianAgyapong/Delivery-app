@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Colors } from '../constants/design';
 
 const { width, height } = Dimensions.get('window');
 
@@ -22,29 +23,29 @@ export default function WelcomeScreen() {
         <View style={styles.container}>
           <View style={styles.content}>
             <View style={styles.logoContainer}>
-              <Ionicons name="restaurant" size={60} color="#FF6B35" />
+              <Ionicons name="restaurant" size={60} color={Colors.primary} />
               <Text style={styles.appName}>FoodieExpress</Text>
               <Text style={styles.tagline}>Delicious food delivered fast</Text>
             </View>
             
             <View style={styles.featuresContainer}>
               <View style={styles.feature}>
-                <Ionicons name="time" size={24} color="#FF6B35" />
+                <Ionicons name="time" size={24} color={Colors.primary} />
                 <Text style={styles.featureText}>Fast Delivery</Text>
               </View>
               <View style={styles.feature}>
-                <Ionicons name="star" size={24} color="#FF6B35" />
+                <Ionicons name="star" size={24} color={Colors.primary} />
                 <Text style={styles.featureText}>Top Restaurants</Text>
               </View>
               <View style={styles.feature}>
-                <Ionicons name="card" size={24} color="#FF6B35" />
+                <Ionicons name="card" size={24} color={Colors.primary} />
                 <Text style={styles.featureText}>Easy Payment</Text>
               </View>
             </View>
 
             <TouchableOpacity 
               style={styles.getStartedButton}
-              onPress={() => router.replace('/(tabs)/home' as any)}
+              onPress={() => router.push('/(auth)/login' as any)}
             >
               <Text style={styles.buttonText}>Get Started</Text>
               <Ionicons name="arrow-forward" size={20} color="#fff" style={styles.buttonIcon} />

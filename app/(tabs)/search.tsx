@@ -1,15 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '../../constants/design';
 
 // Mock data for search results
 const searchResults = [
@@ -173,15 +174,15 @@ export default function SearchScreen() {
             <Text style={styles.sectionTitle}>Quick Filters</Text>
             <View style={styles.filtersContainer}>
               <TouchableOpacity style={styles.filterButton}>
-                <Ionicons name="star" size={16} color="#FF6B35" />
+                <Ionicons name="star" size={16} color={Colors.primary} />
                 <Text style={styles.filterText}>Top Rated</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.filterButton}>
-                <Ionicons name="time" size={16} color="#FF6B35" />
+                <Ionicons name="time" size={16} color={Colors.primary} />
                 <Text style={styles.filterText}>Fast Delivery</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.filterButton}>
-                <Ionicons name="pricetag" size={16} color="#FF6B35" />
+                <Ionicons name="pricetag" size={16} color={Colors.primary} />
                 <Text style={styles.filterText}>Offers</Text>
               </TouchableOpacity>
             </View>
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 14,
-    color: '#FF6B35',
+    color: Colors.primary,
     fontWeight: '600',
   },
   suggestionsContainer: {
@@ -325,11 +326,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#FF6B35',
+    borderColor: Colors.primary,
   },
   filterText: {
     fontSize: 14,
-    color: '#FF6B35',
+    color: Colors.primary,
     marginLeft: 5,
     fontWeight: '500',
   },

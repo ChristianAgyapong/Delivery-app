@@ -1,14 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '../../constants/design';
 
 // Mock data for orders
 const orders = [
@@ -87,12 +88,12 @@ export default function OrdersScreen() {
       {item.status === 'delivering' && (
         <View style={styles.trackingContainer}>
           <View style={styles.trackingInfo}>
-            <Ionicons name="time" size={16} color="#FF6B35" />
+            <Ionicons name="time" size={16} color={Colors.primary} />
             <Text style={styles.estimatedTime}>Estimated: {item.estimatedDelivery}</Text>
           </View>
           <TouchableOpacity style={styles.trackButton}>
             <Text style={styles.trackButtonText}>Track Order</Text>
-            <Ionicons name="location" size={16} color="#FF6B35" />
+            <Ionicons name="location" size={16} color={Colors.primary} />
           </TouchableOpacity>
         </View>
       )}
@@ -221,7 +222,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: '#FF6B35',
+    borderBottomColor: Colors.primary,
   },
   tabText: {
     fontSize: 16,
@@ -229,7 +230,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeTabText: {
-    color: '#FF6B35',
+    color: Colors.primary,
     fontWeight: 'bold',
   },
   ordersList: {
@@ -311,7 +312,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   trackButtonText: {
-    color: '#FF6B35',
+    color: Colors.primary,
     fontSize: 14,
     fontWeight: 'bold',
     marginRight: 5,
@@ -339,11 +340,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#FF6B35',
+    borderColor: Colors.primary,
     alignItems: 'center',
   },
   actionButtonText: {
-    color: '#FF6B35',
+    color: Colors.primary,
     fontSize: 14,
     fontWeight: 'bold',
   },
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   browseButton: {
-    backgroundColor: '#FF6B35',
+    backgroundColor: Colors.primary,
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 25,

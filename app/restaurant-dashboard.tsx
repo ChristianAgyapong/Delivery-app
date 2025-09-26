@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Gradients } from '../constants/design';
 import {
   authService,
   restaurantManagementService,
@@ -26,6 +27,21 @@ export default function RestaurantDashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
+    // Check authentication
+    const isAuthenticated = authService.isUserAuthenticated();
+    const user = authService.getCurrentUser();
+    
+    if (!isAuthenticated || !user) {
+      router.replace('/(auth)/login');
+      return;
+    }
+
+    if (user.role !== 'restaurant') {
+      Alert.alert('Access Denied', 'This dashboard is only accessible to restaurants.');
+      router.replace('/');
+      return;
+    }
+
     loadDashboardData();
     
     // Subscribe to order updates
@@ -132,7 +148,7 @@ export default function RestaurantDashboardScreen() {
 
   if (loading) {
     return (
-      <LinearGradient colors={['#FF5722', '#FF9800']} style={styles.container}>
+      <LinearGradient colors={Gradients.restaurant} style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingText}>Loading Dashboard...</Text>
@@ -143,7 +159,7 @@ export default function RestaurantDashboardScreen() {
   }
 
   return (
-    <LinearGradient colors={['#FF5722', '#FF9800']} style={styles.container}>
+    <LinearGradient colors={Gradients.restaurant} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>

@@ -11,6 +11,7 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '../../constants/design';
 import { authService } from '../../services';
 
 export default function ProfileScreen() {
@@ -21,15 +22,28 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     // Get current user role to determine which profile to show
+    const isAuthenticated = authService.isUserAuthenticated();
     const currentUser = authService.getCurrentUser();
-    if (currentUser) {
+    
+    if (isAuthenticated && currentUser) {
       setUserRole(currentUser.role);
+    } else {
+      setUserRole(null);
     }
   }, []);
 
   const navigateToProfile = () => {
+    const isAuthenticated = authService.isUserAuthenticated();
+    const user = authService.getCurrentUser();
+    
+    if (!isAuthenticated || !user) {
+      // Not authenticated, redirect to login
+      router.push('/(auth)/login' as any);
+      return;
+    }
+
     // Navigate to appropriate profile based on user role
-    switch (userRole) {
+    switch (user.role) {
       case 'customer':
         router.push('/customer-profile' as any);
         break;
@@ -40,12 +54,17 @@ export default function ProfileScreen() {
         router.push('/delivery-profile' as any);
         break;
       case 'admin':
-      case 'super_admin':
         router.push('/admin-profile' as any);
         break;
       default:
         router.push('/customer-profile' as any); // Default to customer profile
     }
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    // Navigate to welcome screen after logout
+    router.replace('/');
   };
 
   const menuItems = [
@@ -126,7 +145,7 @@ export default function ProfileScreen() {
     <TouchableOpacity key={item.id} style={styles.menuItem} onPress={item.onPress}>
       <View style={styles.menuItemLeft}>
         <View style={styles.iconContainer}>
-          <Ionicons name={item.icon} size={20} color="#FF6B35" />
+          <Ionicons name={item.icon} size={20} color={Colors.primary} />
         </View>
         <View style={styles.menuItemText}>
           <Text style={styles.menuItemTitle}>{item.title}</Text>
@@ -167,7 +186,7 @@ export default function ProfileScreen() {
               <Text style={styles.profilePhone}>+1 (555) 123-4567</Text>
             </View>
             <TouchableOpacity style={styles.editButton} onPress={navigateToProfile}>
-              <Ionicons name="pencil" size={16} color="#FF6B35" />
+              <Ionicons name="pencil" size={16} color={Colors.primary} />
             </TouchableOpacity>
           </View>
 
@@ -203,14 +222,14 @@ export default function ProfileScreen() {
           <View style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
               <View style={styles.iconContainer}>
-                <Ionicons name="notifications" size={20} color="#FF6B35" />
+                <Ionicons name="notifications" size={20} color={Colors.primary} />
               </View>
               <Text style={styles.menuItemTitle}>Push Notifications</Text>
             </View>
             <Switch
               value={notificationsEnabled}
               onValueChange={setNotificationsEnabled}
-              trackColor={{ false: '#ccc', true: '#FF6B35' }}
+              trackColor={{ false: '#ccc', true: Colors.primary }}
               thumbColor="#fff"
             />
           </View>
@@ -218,14 +237,14 @@ export default function ProfileScreen() {
           <View style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
               <View style={styles.iconContainer}>
-                <Ionicons name="location" size={20} color="#FF6B35" />
+                <Ionicons name="location" size={20} color={Colors.primary} />
               </View>
               <Text style={styles.menuItemTitle}>Location Services</Text>
             </View>
             <Switch
               value={locationEnabled}
               onValueChange={setLocationEnabled}
-              trackColor={{ false: '#ccc', true: '#FF6B35' }}
+              trackColor={{ false: '#ccc', true: Colors.primary }}
               thumbColor="#fff"
             />
           </View>
@@ -239,7 +258,7 @@ export default function ProfileScreen() {
 
         {/* Logout */}
         <View style={styles.section}>
-          <TouchableOpacity style={styles.logoutButton}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Ionicons name="log-out" size={20} color="#FF4444" />
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
@@ -312,7 +331,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#FF6B35',
+    borderColor: Colors.primary,
   },
   statsContainer: {
     flexDirection: 'row',

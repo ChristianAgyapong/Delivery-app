@@ -3,17 +3,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Gradients } from '../../constants/design';
 import { authService, UserRole } from '../../services';
 
 export default function LoginScreen() {
@@ -26,12 +27,13 @@ export default function LoginScreen() {
   // Check if user is already authenticated
   useEffect(() => {
     const checkAuth = async () => {
+      const isAuthenticated = authService.isUserAuthenticated();
       const user = authService.getCurrentUser();
-      if (user) {
+      if (isAuthenticated && user) {
         // Navigate based on user role
         switch (user.role) {
           case 'customer':
-            router.replace('/');
+            router.replace('/(tabs)/home');
             break;
           case 'restaurant':
             router.replace('/restaurant-dashboard');
@@ -63,28 +65,24 @@ export default function LoginScreen() {
       });
       
       if (result.success) {
-        Alert.alert('Success', 'Login successful!', [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Navigate based on role
-              switch (selectedRole) {
-                case 'customer':
-                  router.replace('/');
-                  break;
-                case 'restaurant':
-                  router.replace('/restaurant-dashboard');
-                  break;
-                case 'delivery':
-                  router.replace('/delivery-dashboard');
-                  break;
-                case 'admin':
-                  router.replace('/admin-dashboard');
-                  break;
-              }
-            },
-          },
-        ]);
+        // Navigate based on actual user role from auth service
+        const authenticatedUser = authService.getCurrentUser();
+        if (authenticatedUser) {
+          switch (authenticatedUser.role) {
+            case 'customer':
+              router.replace('/(tabs)/home');
+              break;
+            case 'restaurant':
+              router.replace('/restaurant-dashboard');
+              break;
+            case 'delivery':
+              router.replace('/delivery-dashboard');
+              break;
+            case 'admin':
+              router.replace('/admin-dashboard');
+              break;
+          }
+        }
       } else {
         Alert.alert('Login Failed', result.message);
       }
@@ -104,7 +102,7 @@ export default function LoginScreen() {
   ];
 
   return (
-    <LinearGradient colors={['#FF6B6B', '#4ECDC4']} style={styles.container}>
+    <LinearGradient colors={Gradients.auth} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -205,7 +203,7 @@ export default function LoginScreen() {
                 disabled={loading}
               >
                 <LinearGradient
-                  colors={loading ? ['#CCC', '#AAA'] : ['#FF6B6B', '#4ECDC4']}
+                  colors={loading ? ['#CCC', '#AAA'] : Gradients.auth}
                   style={styles.loginButtonGradient}
                 >
                   {loading ? (
@@ -231,10 +229,10 @@ export default function LoginScreen() {
             {/* Demo Credentials */}
             <View style={styles.demoContainer}>
               <Text style={styles.demoTitle}>Demo Credentials:</Text>
-              <Text style={styles.demoText}>Customer: customer@demo.com / password123</Text>
-              <Text style={styles.demoText}>Restaurant: restaurant@demo.com / password123</Text>
-              <Text style={styles.demoText}>Delivery: delivery@demo.com / password123</Text>
-              <Text style={styles.demoText}>Admin: admin@demo.com / password123</Text>
+              <Text style={styles.demoText}>Customer: john.customer@example.com / password123</Text>
+              <Text style={styles.demoText}>Restaurant: restaurant@pizzapalace.com / password123</Text>
+              <Text style={styles.demoText}>Delivery: rider@delivery.com / password123</Text>
+              <Text style={styles.demoText}>Admin: admin@fooddelivery.com / password123</Text>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>

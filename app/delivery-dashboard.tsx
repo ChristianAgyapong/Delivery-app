@@ -3,20 +3,21 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Gradients } from '../constants/design';
 import {
-    authService,
-    deliveryManagementService,
-    DeliveryRequest,
-    DeliveryRider,
+  authService,
+  deliveryManagementService,
+  DeliveryRequest,
+  DeliveryRider,
 } from '../services';
 
 export default function DeliveryDashboardScreen() {
@@ -28,6 +29,21 @@ export default function DeliveryDashboardScreen() {
   const [isOnline, setIsOnline] = useState(false);
 
   useEffect(() => {
+    // Check authentication
+    const isAuthenticated = authService.isUserAuthenticated();
+    const user = authService.getCurrentUser();
+    
+    if (!isAuthenticated || !user) {
+      router.replace('/(auth)/login');
+      return;
+    }
+
+    if (user.role !== 'delivery') {
+      Alert.alert('Access Denied', 'This dashboard is only accessible to delivery riders.');
+      router.replace('/');
+      return;
+    }
+
     loadDashboardData();
     
     // Subscribe to delivery updates
@@ -148,7 +164,7 @@ export default function DeliveryDashboardScreen() {
 
   if (loading) {
     return (
-      <LinearGradient colors={['#2196F3', '#21CBF3']} style={styles.container}>
+      <LinearGradient colors={Gradients.delivery} style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingText}>Loading Dashboard...</Text>
@@ -159,7 +175,7 @@ export default function DeliveryDashboardScreen() {
   }
 
   return (
-    <LinearGradient colors={['#2196F3', '#21CBF3']} style={styles.container}>
+    <LinearGradient colors={Gradients.delivery} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>

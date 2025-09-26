@@ -3,25 +3,26 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Animated,
-    Dimensions,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Dimensions,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors, Gradients } from '../constants/design';
 import {
-    User,
-    authService,
-    favoritesService,
-    ordersService,
-    userService,
+  User,
+  authService,
+  favoritesService,
+  ordersService,
+  userService,
 } from '../services';
 
 const { width } = Dimensions.get('window');
@@ -59,6 +60,23 @@ export default function CustomerProfileScreen() {
   const slideAnim = useState(new Animated.Value(100))[0];
 
   useEffect(() => {
+    // Check authentication
+    const isAuthenticated = authService.isUserAuthenticated();
+    const user = authService.getCurrentUser();
+    
+    if (!isAuthenticated || !user) {
+      // Not authenticated, redirect to login
+      router.replace('/(auth)/login');
+      return;
+    }
+
+    if (user.role !== 'customer') {
+      // Wrong role, redirect to appropriate dashboard
+      Alert.alert('Access Denied', 'This profile is only accessible to customers.');
+      router.back();
+      return;
+    }
+
     loadProfile();
     // Animate in on mount
     Animated.parallel([
@@ -215,7 +233,7 @@ export default function CustomerProfileScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <LinearGradient colors={['#667eea', '#764ba2']} style={styles.loadingContainer}>
+        <LinearGradient colors={Gradients.customer} style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FFFFFF" />
           <Text style={styles.loadingText}>Loading your profile...</Text>
         </LinearGradient>
@@ -226,8 +244,8 @@ export default function CustomerProfileScreen() {
   if (!profile) {
     return (
       <SafeAreaView style={styles.container}>
-        <LinearGradient colors={['#667eea', '#764ba2']} style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={64} color="#FFFFFF" />
+        <LinearGradient colors={Gradients.customer} style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color={Colors.white} />
           <Text style={styles.errorText}>Failed to load profile</Text>
           <TouchableOpacity style={styles.retryButton} onPress={loadProfile}>
             <Text style={styles.retryButtonText}>Try Again</Text>
@@ -241,7 +259,7 @@ export default function CustomerProfileScreen() {
     <SafeAreaView style={styles.container}>
       <Animated.View style={[styles.animatedContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         {/* Header */}
-        <LinearGradient colors={['#667eea', '#764ba2']} style={styles.header}>
+        <LinearGradient colors={Gradients.customer} style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />

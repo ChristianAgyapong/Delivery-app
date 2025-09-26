@@ -3,22 +3,23 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Dimensions,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Dimensions,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Gradients } from '../constants/design';
 import {
-    adminManagementService,
-    AdminUser,
-    authService,
-    Dispute,
-    PlatformStats,
+  adminManagementService,
+  AdminUser,
+  authService,
+  Dispute,
+  PlatformStats,
 } from '../services';
 
 const { width } = Dimensions.get('window');
@@ -32,6 +33,21 @@ export default function AdminDashboardScreen() {
   const [selectedTimeframe, setSelectedTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   useEffect(() => {
+    // Check authentication
+    const isAuthenticated = authService.isUserAuthenticated();
+    const user = authService.getCurrentUser();
+    
+    if (!isAuthenticated || !user) {
+      router.replace('/(auth)/login');
+      return;
+    }
+
+    if (user.role !== 'admin') {
+      Alert.alert('Access Denied', 'This dashboard is only accessible to administrators.');
+      router.replace('/');
+      return;
+    }
+
     loadDashboardData();
     
     // Subscribe to admin updates
@@ -141,7 +157,7 @@ export default function AdminDashboardScreen() {
 
   if (loading) {
     return (
-      <LinearGradient colors={['#6A1B9A', '#8E24AA']} style={styles.container}>
+      <LinearGradient colors={Gradients.admin} style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingText}>Loading Dashboard...</Text>
@@ -152,7 +168,7 @@ export default function AdminDashboardScreen() {
   }
 
   return (
-    <LinearGradient colors={['#6A1B9A', '#8E24AA']} style={styles.container}>
+    <LinearGradient colors={Gradients.admin} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>

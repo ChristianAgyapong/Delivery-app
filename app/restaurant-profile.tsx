@@ -3,18 +3,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  authService,
-  restaurantManagementService,
-  RestaurantProfile,
+    authService,
+    restaurantManagementService,
+    RestaurantProfile,
 } from '../services';
 
 export default function RestaurantProfileScreen() {
@@ -22,6 +22,21 @@ export default function RestaurantProfileScreen() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // Check authentication
+    const isAuthenticated = authService.isUserAuthenticated();
+    const user = authService.getCurrentUser();
+    
+    if (!isAuthenticated || !user) {
+      router.replace('/(auth)/login');
+      return;
+    }
+
+    if (user.role !== 'restaurant') {
+      Alert.alert('Access Denied', 'This profile is only accessible to restaurants.');
+      router.back();
+      return;
+    }
+
     loadProfile();
   }, []);
 

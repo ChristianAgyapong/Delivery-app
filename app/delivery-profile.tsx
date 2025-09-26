@@ -3,21 +3,21 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    Animated,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authService } from '../services/authService';
 import {
-  DeliveryRider,
-  deliveryManagementService
+    DeliveryRider,
+    deliveryManagementService
 } from '../services/deliveryManagementService';
 
 const { width } = Dimensions.get('window');
@@ -30,6 +30,21 @@ export default function DeliveryProfileScreen() {
   const slideAnim = useState(new Animated.Value(100))[0];
 
   useEffect(() => {
+    // Check authentication
+    const isAuthenticated = authService.isUserAuthenticated();
+    const user = authService.getCurrentUser();
+    
+    if (!isAuthenticated || !user) {
+      router.replace('/(auth)/login');
+      return;
+    }
+
+    if (user.role !== 'delivery') {
+      Alert.alert('Access Denied', 'This profile is only accessible to delivery riders.');
+      router.back();
+      return;
+    }
+
     loadProfile();
     // Animate in on mount
     Animated.parallel([
