@@ -84,7 +84,7 @@ export const Typography = {
   },
 };
 
-// Spacing Scale
+// Spacing Scale (Mobile-optimized with touch targets)
 export const Spacing = {
   xs: 4,
   sm: 8,
@@ -96,6 +96,14 @@ export const Spacing = {
   '4xl': 40,
   '5xl': 48,
   '6xl': 64,
+  
+  // Touch target sizes (minimum 44px for accessibility)
+  touchTarget: 44,
+  touchTargetLarge: 56,
+  
+  // Safe area insets
+  safeAreaTop: 44,
+  safeAreaBottom: 34,
 };
 
 // Border Radius
@@ -144,7 +152,7 @@ export const Gradients = {
   overlay: ['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.7)'] as const,
 };
 
-// Common Styles
+// Common Styles (Mobile-first HCI principles)
 export const CommonStyles = {
   // Container styles
   container: {
@@ -160,8 +168,9 @@ export const CommonStyles = {
     ...Shadows.md,
   },
   
-  // Button styles
+  // Button styles (Touch-optimized)
   button: {
+    minHeight: Spacing.touchTarget,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.lg,
@@ -169,32 +178,52 @@ export const CommonStyles = {
     justifyContent: 'center' as const,
   },
   
-  // Text styles
+  buttonLarge: {
+    minHeight: Spacing.touchTargetLarge,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing['2xl'],
+    borderRadius: BorderRadius.xl,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  
+  // Text styles (Legible sizes)
   text: {
     primary: {
       color: Colors.textPrimary,
       fontSize: Typography.fontSize.base,
       fontWeight: Typography.fontWeight.normal,
+      lineHeight: Typography.lineHeight.normal,
     },
     secondary: {
       color: Colors.textSecondary,
       fontSize: Typography.fontSize.sm,
       fontWeight: Typography.fontWeight.normal,
+      lineHeight: Typography.lineHeight.normal,
     },
     heading: {
       color: Colors.textPrimary,
-      fontSize: Typography.fontSize.xl,
+      fontSize: Typography.fontSize['2xl'],
       fontWeight: Typography.fontWeight.bold,
+      lineHeight: Typography.lineHeight.relaxed,
+    },
+    subheading: {
+      color: Colors.textPrimary,
+      fontSize: Typography.fontSize.lg,
+      fontWeight: Typography.fontWeight.semibold,
+      lineHeight: Typography.lineHeight.normal,
     },
   },
   
-  // Input styles
+  // Input styles (Touch-friendly)
   input: {
+    minHeight: Spacing.touchTarget,
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
     fontSize: Typography.fontSize.base,
     color: Colors.textPrimary,
   },
@@ -204,6 +233,22 @@ export const CommonStyles = {
     paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.xl,
     backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  
+  // Screen padding (Safe and consistent)
+  screenPadding: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing['2xl'],
+  },
+  
+  // List item styles (Touch-optimized)
+  listItem: {
+    minHeight: Spacing.touchTarget,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },

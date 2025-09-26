@@ -1,6 +1,23 @@
-# 🍔 FoodieExpress - Food Delivery App
+# 🍔 FoodieExpress - Complete Food Delivery Platform
 
-A comprehensive, user-friendly food delivery application built with React Native and Expo, designed for maximum user satisfaction and engagement.
+A comprehensive food delivery application with **React Native Frontend** and **Django REST Backend**.
+
+## 🏗️ Project Architecture
+
+This project consists of two main components:
+
+### 📱 **Frontend** (`/frontend/` - React Native Mobile App)
+- Cross-platform mobile application built with React Native + Expo
+- TypeScript for type safety and better development experience
+- Modern UI/UX following Human-Computer Interaction principles
+- Multi-role support (Customer, Restaurant, Delivery, Admin)
+
+### 🔧 **Backend** (`/backend/` - Django REST API)
+- Django REST Framework for robust API development
+- JWT authentication matching frontend interfaces
+- PostgreSQL database (SQLite for development)
+- Real-time features with WebSockets
+- Comprehensive admin panel
 
 ## 🚀 Features
 
@@ -151,29 +168,68 @@ assets/
 - **React Native Safe Area Context**: Handle device safe areas
 - **Expo Linear Gradient**: Beautiful gradient effects
 
-## 📱 Installation & Setup
+## � Quick Start
 
-1. **Clone the repository**
+### Frontend Setup (React Native)
+
+1. **Clone and navigate to project**
    ```bash
    git clone <repository-url>
-   cd delivery-app
+   cd delivery-app/frontend
    ```
 
-2. **Install dependencies**
+2. **Install frontend dependencies**
    ```bash
    npm install
    ```
 
-3. **Start the development server**
+3. **Start the Expo development server**
    ```bash
    npx expo start
    ```
 
 4. **Run on your device**
    - Scan QR code with Expo Go app (Android/iOS)
-   - Press `w` for web browser
    - Press `a` for Android emulator
    - Press `i` for iOS simulator
+
+### Backend Setup (Django API)
+
+1. **Navigate to backend directory**
+   ```bash
+   cd backend
+   ```
+
+2. **Run the setup script**
+   ```powershell
+   .\setup.ps1
+   ```
+
+3. **Start the Django development server**
+   ```bash
+   # Activate virtual environment
+   .\venv\Scripts\Activate.ps1
+   
+   # Run server
+   python manage.py runserver
+   ```
+
+4. **Access the API**
+   - API Root: http://127.0.0.1:8000/api/v1/
+   - Admin Panel: http://127.0.0.1:8000/admin/
+   - API Docs: http://127.0.0.1:8000/api/docs/
+
+### Integration
+
+To connect the frontend with the backend:
+
+1. **Update API Base URL** in frontend services:
+   ```typescript
+   // In frontend/services/index.ts
+   const API_BASE_URL = 'http://192.168.1.100:8000/api/v1';
+   ```
+
+2. **Replace mock authentication** with real JWT tokens from the Django backend
 
 ## 🎯 User-Centered Design Decisions
 

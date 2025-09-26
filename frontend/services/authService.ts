@@ -182,26 +182,8 @@ class AuthService {
       };
       this.isAuthenticated = true;
 
-      // Import userService and sync the user data (important for profile consistency)
-      try {
-        const { userService } = require('./userService');
-        
-        // Sync login data with userService to ensure profile data is consistent
-        await userService.login(email, credentials.password || 'password123');
-        
-        // Ensure user profile data is in sync
-        if (this.currentUser) {
-          await userService.updateProfile({
-            firstName: this.currentUser.firstName || '',
-            lastName: this.currentUser.lastName || '',
-            email: this.currentUser.email,
-            phone: this.currentUser.phone
-          });
-        }
-      } catch (syncError) {
-        console.error('Error syncing user data during login:', syncError);
-        // Continue with login even if sync fails
-      }
+      // Simple login without complex syncing for now
+      console.log('User authenticated successfully:', this.currentUser);
 
       this.notify('user_logged_in', this.currentUser);
 
@@ -267,31 +249,8 @@ class AuthService {
 
       this.currentUser = newUser;
       this.isAuthenticated = true;
-
-      // Import userService and sync the user data (important for profile consistency)
-      const { userService } = require('./userService');
       
-      // Register the user with userService to make sure profile data is in sync
-      await userService.register({
-        email: signupData.email,
-        password: 'password123', // Using default password for the mock
-        firstName: signupData.firstName,
-        lastName: signupData.lastName,
-        phone: signupData.phone
-      });
-      
-      // Update additional user preferences based on role
-      if (signupData.role === 'restaurant' && signupData.businessName) {
-        await userService.updateProfile({
-          businessName: signupData.businessName
-        });
-      }
-      
-      if (signupData.role === 'delivery' && signupData.vehicleInfo) {
-        await userService.updateProfile({
-          vehicleInfo: signupData.vehicleInfo
-        });
-      }
+      console.log('New user created:', newUser);
 
       this.notify('user_registered', newUser);
 

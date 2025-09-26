@@ -36,24 +36,8 @@ export default function SignupScreen() {
       const isAuthenticated = authService.isUserAuthenticated();
       const user = authService.getCurrentUser();
       if (isAuthenticated && user) {
-        // Navigate based on user role
-        switch (user.role) {
-          case 'customer':
-            router.replace('/(tabs)/home');
-            break;
-          case 'restaurant':
-            router.replace('/restaurant-dashboard');
-            break;
-          case 'delivery':
-            router.replace('/delivery-dashboard');
-            break;
-          case 'admin':
-            router.replace('/admin-dashboard');
-            break;
-          default:
-            // Default to home screen if role is unknown
-            router.replace('/(tabs)/home');
-        }
+        // Always navigate to home screen regardless of role
+        router.replace('/(tabs)/home');
       }
     };
     checkAuth();
@@ -84,7 +68,9 @@ export default function SignupScreen() {
       return;
     }
 
+    console.log('Signup attempt for:', firstName, lastName, email, selectedRole);
     setLoading(true);
+    
     try {
       // Base signup data
       let signupData: any = {
@@ -98,53 +84,39 @@ export default function SignupScreen() {
       
       // Add role-specific data
       if (selectedRole === 'restaurant') {
-        signupData = {
-          ...signupData,
-          businessName: businessName
-        };
+        signupData.businessName = businessName;
       }
       
       if (selectedRole === 'delivery') {
-        signupData = {
-          ...signupData,
-          vehicleInfo: {
-            type: vehicleType,
-          }
+        signupData.vehicleInfo = {
+          type: vehicleType,
         };
       }
       
+      console.log('Calling authService.signup with:', signupData);
       const result = await authService.signup(signupData);
+      console.log('Signup result:', result);
       
       if (result.success) {
-        // Get user immediately after signup
-        const user = authService.getCurrentUser();
+        console.log("Signup successful, navigating to home screen");
         
-        // Always redirect to home screen after signup
-        const redirectPath = '/(tabs)/home';
-        
-        // Create a message that informs the user about profile synchronization
-        const successMessage = 
-          `${result.message}\n\nYour account details will be available in your profile.`;
-        
-        // Show success message and then navigate
+        // Simple success message and navigation
         Alert.alert(
-          'Account Created Successfully', 
-          successMessage,
+          'Account Created!', 
+          'Welcome to the app! Your profile has been set up.',
           [{ 
-            text: 'Continue',
+            text: 'Get Started',
             onPress: () => {
-              console.log("User registered successfully. Syncing profile data...");
-              console.log("Navigating to home screen:", redirectPath);
-              router.replace(redirectPath as any);
+              router.replace('/(tabs)/home');
             }
           }]
         );
       } else {
-        Alert.alert('Registration Failed', result.message);
+        Alert.alert('Registration Failed', result.message || 'Please try again');
       }
     } catch (error) {
       console.error('Signup error:', error);
-      Alert.alert('Error', 'An error occurred during registration');
+      Alert.alert('Error', 'An error occurred during registration. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -423,58 +395,74 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 30,
+    paddingHorizontal: 16,
+    paddingBottom: 40,
   },
   backButton: {
-    marginTop: 20,
-    padding: 8,
+    marginTop: 16,
+    padding: 12,
     alignSelf: 'flex-start',
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   header: {
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 30,
+    marginTop: 16,
+    marginBottom: 24,
+    paddingHorizontal: 8,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#FFF',
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.85)',
+    textAlign: 'center',
+    lineHeight: 22,
   },
   roleContainer: {
-    marginBottom: 30,
+    marginBottom: 24,
+    paddingHorizontal: 4,
   },
   roleTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#FFF',
-    marginBottom: 15,
+    marginBottom: 16,
     textAlign: 'center',
   },
   roleButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 8,
   },
   roleButton: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
     alignItems: 'center',
-    marginHorizontal: 5,
+    marginHorizontal: 2,
     borderWidth: 2,
     borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    minHeight: 80,
   },
   roleText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
-    marginTop: 5,
+    marginTop: 6,
     color: '#333',
+    textAlign: 'center',
   },
   form: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',

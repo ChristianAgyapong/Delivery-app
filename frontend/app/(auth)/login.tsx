@@ -30,24 +30,8 @@ export default function LoginScreen() {
       const isAuthenticated = authService.isUserAuthenticated();
       const user = authService.getCurrentUser();
       if (isAuthenticated && user) {
-        // Navigate based on user role
-        switch (user.role) {
-          case 'customer':
-            router.replace('/(tabs)/home');
-            break;
-          case 'restaurant':
-            router.replace('/restaurant-dashboard');
-            break;
-          case 'delivery':
-            router.replace('/delivery-dashboard');
-            break;
-          case 'admin':
-            router.replace('/admin-dashboard' as any);
-            break;
-          default:
-            // Default to home screen if role is unknown
-            router.replace('/(tabs)/home');
-        }
+        // Always navigate to home screen regardless of role
+        router.replace('/(tabs)/home');
       }
     };
     checkAuth();
@@ -59,7 +43,9 @@ export default function LoginScreen() {
       return;
     }
 
+    console.log('Login attempt with:', { email, role: selectedRole });
     setLoading(true);
+    
     try {
       const result = await authService.login({
         email,
@@ -67,67 +53,28 @@ export default function LoginScreen() {
         role: selectedRole,
       });
       
+      console.log('Login result:', result);
+      
       if (result.success) {
-        // Get user immediately after login
-        const authenticatedUser = authService.getCurrentUser();
-        if (authenticatedUser) {
-          console.log("Login successful. Navigating based on role:", authenticatedUser.role);
-          
-          // Determine the correct path based on role
-          let redirectPath = '/(tabs)/home';
-          switch (authenticatedUser.role) {
-            case 'customer':
-              redirectPath = '/(tabs)/home';
-              break;
-            case 'restaurant':
-              redirectPath = '/restaurant-dashboard';
-              break;
-            case 'delivery':
-              redirectPath = '/delivery-dashboard';
-              break;
-            case 'admin':
-              redirectPath = '/admin-dashboard';
-              break;
-          }
-          
-          // Import userService to ensure profile data is synced
-          const { userService } = require('../../services/userService');
-          
-          // Sync user profile data if needed
-          try {
-            if (authenticatedUser.firstName && authenticatedUser.lastName) {
-              await userService.updateProfile({
-                firstName: authenticatedUser.firstName,
-                lastName: authenticatedUser.lastName,
-                email: authenticatedUser.email,
-                phone: authenticatedUser.phone
-              });
-              console.log("Profile data synced successfully after login");
+        console.log("Login successful, navigating to home screen");
+        
+        // Simple navigation without complex logic
+        Alert.alert(
+          'Login Successful', 
+          'Welcome back!',
+          [{ 
+            text: 'OK',
+            onPress: () => {
+              router.replace('/(tabs)/home');
             }
-          } catch (syncError) {
-            console.error("Error syncing profile data:", syncError);
-            // Continue with login even if sync fails
-          }
-          
-          // Show success message and then navigate
-          Alert.alert(
-            'Login Successful', 
-            `Welcome back, ${authenticatedUser.firstName}!`,
-            [{ 
-              text: 'Continue',
-              onPress: () => {
-                // Navigate to the appropriate page
-                router.replace(redirectPath as any);
-              }
-            }]
-          );
-        }
+          }]
+        );
       } else {
-        Alert.alert('Login Failed', result.message);
+        Alert.alert('Login Failed', result.message || 'Please check your credentials');
       }
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert('Error', 'An error occurred during login');
+      Alert.alert('Error', 'An error occurred during login. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -268,10 +215,46 @@ export default function LoginScreen() {
             {/* Demo Credentials */}
             <View style={styles.demoContainer}>
               <Text style={styles.demoTitle}>Demo Credentials:</Text>
-              <Text style={styles.demoText}>Customer: john.customer@example.com / password123</Text>
-              <Text style={styles.demoText}>Restaurant: restaurant@pizzapalace.com / password123</Text>
-              <Text style={styles.demoText}>Delivery: rider@delivery.com / password123</Text>
-              <Text style={styles.demoText}>Admin: admin@fooddelivery.com / password123</Text>
+              <TouchableOpacity 
+                style={styles.demoCredential}
+                onPress={() => {
+                  setEmail('john.customer@example.com');
+                  setPassword('password123');
+                  setSelectedRole('customer');
+                }}
+              >
+                <Text style={styles.demoText}>Customer: john.customer@example.com / password123</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.demoCredential}
+                onPress={() => {
+                  setEmail('restaurant@pizzapalace.com');
+                  setPassword('password123');
+                  setSelectedRole('restaurant');
+                }}
+              >
+                <Text style={styles.demoText}>Restaurant: restaurant@pizzapalace.com / password123</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.demoCredential}
+                onPress={() => {
+                  setEmail('rider@delivery.com');
+                  setPassword('password123');
+                  setSelectedRole('delivery');
+                }}
+              >
+                <Text style={styles.demoText}>Delivery: rider@delivery.com / password123</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.demoCredential}
+                onPress={() => {
+                  setEmail('admin@fooddelivery.com');
+                  setPassword('password123');
+                  setSelectedRole('admin');
+                }}
+              >
+                <Text style={styles.demoText}>Admin: admin@fooddelivery.com / password123</Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -292,81 +275,106 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
-    marginTop: 40,
-    marginBottom: 30,
+    marginBottom: 32,
+    paddingHorizontal: 8,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#FFF',
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.85)',
+    textAlign: 'center',
+    lineHeight: 22,
   },
   roleContainer: {
-    marginBottom: 30,
+    marginBottom: 24,
+    paddingHorizontal: 4,
   },
   roleTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#FFF',
-    marginBottom: 15,
+    marginBottom: 16,
     textAlign: 'center',
   },
   roleButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    gap: 8,
   },
   roleButton: {
     width: '48%',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
     borderWidth: 2,
     borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    minHeight: 80,
   },
   roleText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    marginTop: 5,
+    marginTop: 6,
     color: '#333',
+    textAlign: 'center',
   },
   form: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 16,
     marginBottom: 16,
-    paddingHorizontal: 15,
-    height: 50,
+    paddingHorizontal: 16,
+    height: 56,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   inputIcon: {
-    marginRight: 10,
+    marginRight: 12,
+    opacity: 0.7,
   },
   input: {
     flex: 1,
     fontSize: 16,
     color: '#333',
+    fontWeight: '400',
   },
   eyeIcon: {
     position: 'absolute',
-    right: 15,
-    padding: 5,
+    right: 16,
+    padding: 8,
+    borderRadius: 20,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
@@ -377,23 +385,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   loginButton: {
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
   loginButtonDisabled: {
-    opacity: 0.7,
+    opacity: 0.6,
   },
   loginButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 15,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    minHeight: 56,
   },
   loginButtonText: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     marginRight: 8,
+    letterSpacing: 0.5,
   },
   signupContainer: {
     flexDirection: 'row',
@@ -411,20 +427,30 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   demoContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   demoTitle: {
     color: '#FFF',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 12,
+    textAlign: 'center',
   },
   demoText: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 12,
-    marginBottom: 2,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 13,
+    marginBottom: 4,
+    lineHeight: 18,
+  },
+  demoCredential: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    marginBottom: 4,
   },
 });
