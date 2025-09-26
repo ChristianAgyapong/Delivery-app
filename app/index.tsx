@@ -45,7 +45,7 @@ export default function WelcomeScreen() {
 
             <TouchableOpacity 
               style={styles.getStartedButton}
-              onPress={() => router.push('/(auth)/login' as any)}
+              onPress={() => router.push('/(auth)/signup' as any)}
             >
               <Text style={styles.buttonText}>Get Started</Text>
               <Ionicons name="arrow-forward" size={20} color="#fff" style={styles.buttonIcon} />

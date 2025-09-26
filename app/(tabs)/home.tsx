@@ -198,17 +198,35 @@ export default function HomeScreen() {
   const searchAnim = new Animated.Value(0);
 
   useEffect(() => {
-    // Check authentication status
-    const user = authService.getCurrentUser();
-    const authenticated = authService.isUserAuthenticated();
-    setCurrentUser(user);
-    setIsAuthenticated(authenticated);
-
+    // Check authentication status immediately on component mount
+    const checkAuthStatus = () => {
+      const user = authService.getCurrentUser();
+      const authenticated = authService.isUserAuthenticated();
+      
+      console.log("Home screen - Auth check:", authenticated, user?.role);
+      
+      if (!authenticated || !user) {
+        // Redirect to login if not authenticated
+        console.log("Not authenticated, redirecting to login");
+        router.replace('/(auth)/login' as any);
+        return;
+      }
+      
+      // If authenticated, set user info
+      setCurrentUser(user);
+      setIsAuthenticated(true);
+    };
+    
+    // Call the auth check function
+    checkAuthStatus();
+    
+    // Set up deals interval
     const interval = setInterval(() => {
       setCurrentDeals((prev) => (prev + 1) % featuredDeals.length);
     }, 4000);
+    
     return () => clearInterval(interval);
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     Animated.timing(slideAnim, {

@@ -20,6 +20,10 @@ export default function ProfileScreen() {
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
 
+  // State to store user profile data
+  const [profileData, setProfileData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     // Get current user role to determine which profile to show
     const isAuthenticated = authService.isUserAuthenticated();
@@ -27,10 +31,40 @@ export default function ProfileScreen() {
     
     if (isAuthenticated && currentUser) {
       setUserRole(currentUser.role);
+      
+      // Load profile data from userService
+      const { userService } = require('../../services');
+      setIsLoading(true);
+      
+      // Get user profile data for display
+      const userData = userService.getCurrentUser();
+      
+      if (userData) {
+        setProfileData({
+          name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+          email: userData.email || currentUser.email,
+          phone: userData.phone || currentUser.phone || '',
+          createdAt: userData.createdAt || currentUser.createdAt,
+          avatar: userData.avatar || null
+        });
+      } else {
+        // Fallback to auth user data if userService data is not available
+        setProfileData({
+          name: `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim(),
+          email: currentUser.email,
+          phone: currentUser.phone || '',
+          createdAt: currentUser.createdAt,
+          avatar: null
+        });
+      }
+      
+      setIsLoading(false);
     } else {
-      setUserRole(null);
+      // Redirect to login if not authenticated
+      router.replace('/(auth)/login');
+      return;
     }
-  }, []);
+  }, [router]);
 
   const navigateToProfile = () => {
     const isAuthenticated = authService.isUserAuthenticated();
@@ -174,16 +208,32 @@ export default function ProfileScreen() {
         {/* Profile Info */}
         <View style={styles.profileSection}>
           <View style={styles.profileInfo}>
-            <Image
-              source={{
-                uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&w=150'
-              }}
-              style={styles.profileImage}
-            />
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <Ionicons name="person" size={40} color="#ccc" />
+              </View>
+            ) : profileData?.avatar ? (
+              <Image
+                source={{ uri: profileData.avatar }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <View style={styles.profileImagePlaceholder}>
+                <Text style={styles.profileImageText}>
+                  {profileData?.name?.split(' ')[0]?.[0] || ''}
+                  {profileData?.name?.split(' ')[1]?.[0] || ''}
+                </Text>
+              </View>
+            )}
             <View style={styles.profileDetails}>
-              <Text style={styles.profileName}>John Doe</Text>
-              <Text style={styles.profileEmail}>john.doe@example.com</Text>
-              <Text style={styles.profilePhone}>+1 (555) 123-4567</Text>
+              <Text style={styles.profileName}>{profileData?.name || 'User'}</Text>
+              <Text style={styles.profileEmail}>{profileData?.email || ''}</Text>
+              {profileData?.phone && (
+                <Text style={styles.profilePhone}>{profileData.phone}</Text>
+              )}
+              {profileData?.createdAt && (
+                <Text style={styles.memberSince}>Member since: {new Date(profileData.createdAt).toLocaleDateString()}</Text>
+              )}
             </View>
             <TouchableOpacity style={styles.editButton} onPress={navigateToProfile}>
               <Ionicons name="pencil" size={16} color={Colors.primary} />
@@ -431,5 +481,33 @@ const styles = StyleSheet.create({
   versionText: {
     fontSize: 12,
     color: '#999',
+  },
+  loadingContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  profileImagePlaceholder: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: Colors.primary + '33', // 20% opacity
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  profileImageText: {
+    color: Colors.primary,
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  memberSince: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
   },
 });

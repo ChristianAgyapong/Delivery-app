@@ -44,11 +44,14 @@ export default function LoginScreen() {
           case 'admin':
             router.replace('/admin-dashboard' as any);
             break;
+          default:
+            // Default to home screen if role is unknown
+            router.replace('/(tabs)/home');
         }
       }
     };
     checkAuth();
-  }, []);
+  }, [router]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -65,23 +68,59 @@ export default function LoginScreen() {
       });
       
       if (result.success) {
-        // Navigate based on actual user role from auth service
+        // Get user immediately after login
         const authenticatedUser = authService.getCurrentUser();
         if (authenticatedUser) {
+          console.log("Login successful. Navigating based on role:", authenticatedUser.role);
+          
+          // Determine the correct path based on role
+          let redirectPath = '/(tabs)/home';
           switch (authenticatedUser.role) {
             case 'customer':
-              router.replace('/(tabs)/home');
+              redirectPath = '/(tabs)/home';
               break;
             case 'restaurant':
-              router.replace('/restaurant-dashboard');
+              redirectPath = '/restaurant-dashboard';
               break;
             case 'delivery':
-              router.replace('/delivery-dashboard');
+              redirectPath = '/delivery-dashboard';
               break;
             case 'admin':
-              router.replace('/admin-dashboard');
+              redirectPath = '/admin-dashboard';
               break;
           }
+          
+          // Import userService to ensure profile data is synced
+          const { userService } = require('../../services/userService');
+          
+          // Sync user profile data if needed
+          try {
+            if (authenticatedUser.firstName && authenticatedUser.lastName) {
+              await userService.updateProfile({
+                firstName: authenticatedUser.firstName,
+                lastName: authenticatedUser.lastName,
+                email: authenticatedUser.email,
+                phone: authenticatedUser.phone
+              });
+              console.log("Profile data synced successfully after login");
+            }
+          } catch (syncError) {
+            console.error("Error syncing profile data:", syncError);
+            // Continue with login even if sync fails
+          }
+          
+          // Show success message and then navigate
+          Alert.alert(
+            'Login Successful', 
+            `Welcome back, ${authenticatedUser.firstName}!`,
+            [{ 
+              text: 'Continue',
+              onPress: () => {
+                // Navigate to the appropriate page
+                router.replace(redirectPath as any);
+              }
+            }]
+          );
         }
       } else {
         Alert.alert('Login Failed', result.message);

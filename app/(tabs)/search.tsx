@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
   FlatList,
   Image,
@@ -11,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/design';
+import { authService } from '../../services';
 
 // Mock data for search results
 const searchResults = [
@@ -59,8 +61,20 @@ const recentSearches = [
 ];
 
 export default function SearchScreen() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
+  
+  useEffect(() => {
+    // Check authentication status
+    const isAuthenticated = authService.isUserAuthenticated();
+    const currentUser = authService.getCurrentUser();
+    
+    if (!isAuthenticated || !currentUser) {
+      // Redirect to login if not authenticated
+      router.replace('/(auth)/login');
+    }
+  }, [router]);
 
   const filteredResults = searchResults.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
